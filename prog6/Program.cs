@@ -52,7 +52,8 @@ namespace prog6
 
                 switch (answer)
                 {
-                    
+                    case 1:
+                        break;
                 }
             } while (answer != 4);
 
@@ -74,6 +75,8 @@ namespace prog6
                     case 1:
                         break;
                     case 2:
+                        break;
+                    case 3:
                         break;
                 }
             } while (answer != 4);
