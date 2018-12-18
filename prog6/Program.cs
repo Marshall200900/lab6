@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace prog6
@@ -14,6 +15,7 @@ namespace prog6
             bool ok = false;
             do
             {
+                Console.Write(hellostr);
                 ok = double.TryParse(Console.ReadLine(), out result);
                 if (!ok || result<min || result>max) // Проверка, является ли введенная строка числом, и принадлежит ли заданному интервалу
                 {
@@ -48,18 +50,21 @@ namespace prog6
                               "2. Создание массива вручню\n" +
                               "3. Назад");
             // Ввод нужного пункта меню
-            InputHandler(out int answer, 1, 2);
+            InputHandler(out int answer, 1, 3);
             // Ввод количества строк и столбцов в массиве, который мы будем создавать
-            InputHandler(out int size1, 1, int.MaxValue, "Введите количество строк массива: ", "Ошибка, размер должен быть натуральным числом");
-            InputHandler(out int size2, 1, int.MaxValue, "Введите количество столбцов массива: ", "Ошибка, размер должен быть натуральным числом");
+            int strings = 0, columns = 0;
 
             switch (answer)
             {
                 case 1:
-                    CreateArrayRandom(ref array, size1, size2); // Рандомный ввод чисел
+                    InputHandler(out strings, 1, int.MaxValue, "Введите количество строк массива: ", "Ошибка, размер должен быть натуральным числом");
+                    InputHandler(out columns, 1, int.MaxValue, "Введите количество столбцов массива: ", "Ошибка, размер должен быть натуральным числом");
+                    CreateArrayRandom(ref array, strings, columns); // Рандомный ввод чисел
                     break;
                 case 2:
-                    CreateArrayManual(ref array, size1, size2); // Ручной ввод чисел
+                    InputHandler(out strings, 1, int.MaxValue, "Введите количество строк массива: ", "Ошибка, размер должен быть натуральным числом");
+                    InputHandler(out columns, 1, int.MaxValue, "Введите количество столбцов массива: ", "Ошибка, размер должен быть натуральным числом");
+                    CreateArrayManual(ref array, strings, columns); // Ручной ввод чисел
                     break;
                 case 3:
                     return;
@@ -68,9 +73,9 @@ namespace prog6
         }
 
         // Функция для ввода произвольных чисел в массив
-        static void CreateArrayRandom(ref double[,] array, int size1, int size2)
+        static void CreateArrayRandom(ref double[,] array, int strings, int columns)
         {
-            array = new double[size1, size2];
+            array = new double[strings, columns];
             Random rnd = new Random();
             for(int i = 0; i < array.GetLength(0); i++)
             {
@@ -84,14 +89,14 @@ namespace prog6
         }
 
         // Функция для создания двумерного массива вручную
-        static void CreateArrayManual(ref double[,] array, int size1, int size2)
+        static void CreateArrayManual(ref double[,] array, int strings, int columns)
         {
-            array = new double[size1, size2];
+            array = new double[strings, columns];
             for (int i = 0; i < array.GetLength(0); i++)
             {
                 for (int j = 0; j < array.GetLength(1); j++)
                 {
-                    InputHandler(out array[i, j], double.MinValue, double.MaxValue, $"Введите {i + 1}-е число массива:");
+                    InputHandler(out array[i, j], double.MinValue, double.MaxValue, $"Введите число массива {i+1}-й строки {j+1}-го столбца: ");
                 }
             }
             
@@ -106,32 +111,34 @@ namespace prog6
                 {
                     // Форматирование и вывод элемента массива
                     // Каждый элемент имеет не более 3-х знаков после запятой
-                    Console.Write(String.Format("{0:0.###}", array[i, j]) + " ");
+                    Console.Write(String.Format("{0:0.#}", array[i, j]) + " ");
                 }
                 Console.WriteLine();
             }
         }
-
-        // Удаление первого столбца массива, в котором находится число, совпадающее с миниимальным элементом
-        static void DeleteColumn(ref double[,] array)
+        // Нахождение минимального элемента
+        static double FindMinElement(double[,] array)
         {
             double min = array[0, 0];
-            int index = 0;
-            double[,] temp = new double[array.GetLength(0), array.GetLength(1)-1]; // Создание временного массива
 
-            // Нахождение минимального элемента
             for (int i = 0; i < array.GetLength(0); i++)
             {
                 for (int j = 0; j < array.GetLength(1); j++)
                 {
-                    if(array[i, j] < min)
+                    if (array[i, j] < min)
                     {
                         min = array[i, j];
                     }
                 }
             }
+            return min;
+        }
 
-            // Нахождение индекса столбца, в котором содержится минимальное число
+        // Нахождение индекса столбца, в котором содержится минимальное число
+        static int FindIndexOfMin(double[,] array)
+        {
+            int index = 0;
+            double min = FindMinElement(array);
             for (int i = 0; i < array.GetLength(0); i++)
             {
                 for (int j = 0; j < array.GetLength(1); j++)
@@ -142,6 +149,15 @@ namespace prog6
                     }
                 }
             }
+            return index;
+
+        }
+
+        // Удаление первого столбца массива, в котором находится число, совпадающее с миниимальным элементом
+        static int DeleteColumn(ref double[,] array)
+        {
+            int index = FindIndexOfMin(array);
+            double[,] temp = new double[array.GetLength(0), array.GetLength(1)-1]; // Создание временного массива
 
             // Присвоение элементов основного массива временному массиву
             int s = 0;
@@ -160,7 +176,7 @@ namespace prog6
                 }
             }
             array = temp;
-
+            return index + 1;
         }
 
 
@@ -199,11 +215,83 @@ namespace prog6
                         }
                         else
                         {
-                            DeleteColumn(ref array); // Удаление столбца
+                            Console.WriteLine("Удален столбец с позицией "+ DeleteColumn(ref array)); // Удаление столбца
                         }
                         break;
                 }
             } while (answer != 4);
+        }
+
+        // Сортировка массива пузырьком
+        static void BubbleSort(ref string[] sentence)
+        {
+            for (int i = 0; i < sentence.Length; i++)
+            {
+                for (int k = 0; k < sentence.Length - 1; k++)
+                {
+                    if (sentence[k].Length < sentence[k + 1].Length)
+                    {
+                        string temp = sentence[k];
+                        sentence[k] = sentence[k + 1];
+                        sentence[k + 1] = temp;
+                    }
+                }
+            }
+        }
+
+        // Замена слов в строке на перевернутые
+        static void ReplaceWords(ref string str, string[] sentence, string[] copyOfSentence)
+        {
+            
+            for (int i = 0; i < sentence.Length; i++)
+            {
+                string s = copyOfSentence[i];
+                Regex reg = new Regex(@"\b" + s + @"\b");
+                str = reg.Replace(str, sentence[i]);
+                Console.WriteLine(str);
+
+            }
+
+
+        }
+
+        // Переворачивание слов
+        static void ChangeCharOrder(string[] sentence)
+        {
+            for (int i = 0; i < sentence.Length; i++)
+            {
+                char[] temp = sentence[i].ToCharArray(); // Преобразование слова в массив символов
+                Array.Reverse(temp); // Переворачивание массива символов
+                sentence[i] = string.Join("", temp); // Присвоение перевернутого слова
+            }
+        }
+
+        static void ChangeString(ref string str)
+        {
+            char[] marks = { ' ', ',', '!', '?', ':', '—', '.'}; // Массив символов
+            char[] seperators = { '.', '!', '?' };
+            string[] sentences = str.Split(seperators); // Создание массива предложений
+            
+            //Проход цикла по всем предложениям
+            for(int j = 0; j < sentences.Length; j++)
+            {
+                string[] sentence = sentences[j].Trim().Split(marks, StringSplitOptions.RemoveEmptyEntries); // Создание массива слов
+                
+                string[] copyOfSentence = new string[sentence.Length]; // Создание второго массива
+                Array.Copy(sentence, copyOfSentence, sentence.Length); // Копирование массива слов во второй массив
+                
+                ChangeCharOrder(sentence);
+
+                BubbleSort(ref sentence);
+                //foreach(string e in sentence)
+                //{
+                //    Console.Write(e + " ");
+                //}
+                ReplaceWords(ref str, sentence, copyOfSentence);
+                
+               
+            }
+            
         }
 
         // Меню строк
@@ -219,14 +307,53 @@ namespace prog6
                 "4. Назад");
                 InputHandler(out answer, 1, 4);
 
+                string[] arrayOfStrings = { "Hello user! Please enter your password.", "Today is a beautiful day. Let's go for a walk" };
                 switch (answer)
                 {
                     case 1:
+                        Console.WriteLine("Выберите один из готовых вариантов или создайте строку самостоятельно");
+                        Console.WriteLine("" +
+                                $"1. {arrayOfStrings[0]}\n" +
+                                $"2. {arrayOfStrings[1]}\n" +
+                                "3. Ввести строку самостоятельно\n");
+                        InputHandler(out answer, 1, 3, "Ваш ввод: ", "Ошибка, повторите еще раз.");
+                        switch (answer)
+                        {
+                            case 1:
+                                str = arrayOfStrings[0];
+                                break;
+                            case 2:
+                                str = arrayOfStrings[1];
+                                break;
+                            case 3:
+                                Console.Write("Введите строку: ");
+                                str = Console.ReadLine();
+                                break;
+                        }
                         break;
                     case 2:
+                        if(str.Length == 0)
+                        {
+                            Console.WriteLine("Сначала создайте строку");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"'{str}'");
+                        }
                         break;
                     case 3:
+                        if (str.Length == 0)
+                        {
+                            Console.WriteLine("Сначала создайте строку");
+                        }
+                        else
+                        {
+                            
+                            ChangeString(ref str);
+                        }
                         break;
+                    case 4:
+                        return;
                 }
             } while (answer != 4);
         }
